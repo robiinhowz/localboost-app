@@ -1,140 +1,115 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Radar, Filter, AlertCircle } from "lucide-react";
-import { SearchForm } from "@/components/SearchForm";
-import { LeadTable } from "@/components/LeadTable";
-import { OutreachModal } from "@/components/OutreachModal";
-import { useProspect } from "@/hooks/useProspect";
+import { useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Radar, Sparkles, Target, Zap } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LeadForge — Prospecção local com IA para freelancers e agências" },
+      { title: "LeadForge — Prospecção inteligente para freelancers e agências" },
       {
         name: "description",
         content:
-          "Encontre negócios locais sem site profissional e gere abordagens personalizadas com IA em segundos.",
-      },
-      { property: "og:title", content: "LeadForge — Prospecção local com IA" },
-      {
-        property: "og:description",
-        content: "Encontre leads locais e gere mensagens de abordagem com IA.",
-      },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap",
+          "Encontre negócios locais reais sem site profissional, analise com IA e gere abordagens em segundos.",
       },
     ],
   }),
-  component: Index,
+  component: Landing,
 });
 
-function Index() {
-  const p = useProspect();
-  const [onlyNoSite, setOnlyNoSite] = useState(true);
+function Landing() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
-  const stats = useMemo(() => {
-    const total = p.leads.length;
-    const noSite = p.leads.filter((l) => !l.hasWebsite).length;
-    const outdated = p.leads.filter((l) => l.hasWebsite && l.websiteOutdated).length;
-    return { total, noSite, outdated };
-  }, [p.leads]);
+  useEffect(() => {
+    if (!loading && user) navigate({ to: "/dashboard", replace: true });
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-background bg-hero">
       <header className="border-b bg-background/60 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2.5">
             <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/15 text-primary shadow-glow">
               <Radar className="h-5 w-5" />
             </div>
             <div>
               <p className="text-sm font-bold leading-none">LeadForge</p>
-              <p className="text-[11px] text-muted-foreground">Prospecção local com IA</p>
+              <p className="text-[11px] text-muted-foreground">Prospecção inteligente</p>
             </div>
           </div>
-          <span className="hidden text-xs text-muted-foreground sm:block">
-            Para freelancers e agências
-          </span>
+          <Link
+            to="/login"
+            className="rounded-lg border bg-card px-4 py-1.5 text-sm font-medium hover:border-primary/40"
+          >
+            Entrar
+          </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-        <section className="mb-8 text-center sm:mb-12">
+      <main className="mx-auto max-w-5xl px-4 py-16 sm:py-24">
+        <div className="text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Encontre clientes em segundos
+            Busca real no Google · Análise com IA
           </span>
-          <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-5xl">
-            Encontre negócios locais <span className="text-gradient">sem site profissional</span>
+          <h1 className="mx-auto mt-5 max-w-3xl text-4xl font-bold leading-tight sm:text-6xl">
+            Encontre clientes locais{" "}
+            <span className="text-gradient">com baixa presença digital</span>
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            Pesquise por nicho e cidade, descubra leads qualificados e gere mensagens de abordagem
-            personalizadas com IA — incluindo prompt para uma demo de landing page.
+          <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
+            Crie campanhas por nicho e cidade. A LeadForge busca negócios reais na internet,
+            analisa o site e o Instagram de cada um, e gera mensagens e prompts de landing
+            page prontos para fechar.
           </p>
-        </section>
-
-        <section className="mb-6">
-          <SearchForm loading={p.searching} onSearch={p.runSearch} />
-          {p.searchError && (
-            <div className="mt-3 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-foreground">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              {p.searchError}
-            </div>
-          )}
-        </section>
-
-        {p.leads.length > 0 && (
-          <>
-            <section className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="rounded-md border bg-card px-2.5 py-1 text-muted-foreground">
-                  {stats.total} leads
-                </span>
-                <span className="rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-primary">
-                  {stats.noSite} sem site
-                </span>
-                <span className="rounded-md border border-warning/30 bg-warning/10 px-2.5 py-1 text-warning">
-                  {stats.outdated} desatualizados
-                </span>
-              </div>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground">
-                <Filter className="h-3.5 w-3.5" />
-                <input
-                  type="checkbox"
-                  checked={onlyNoSite}
-                  onChange={(e) => setOnlyNoSite(e.target.checked)}
-                  className="h-3.5 w-3.5 accent-primary"
-                />
-                Apenas sem site
-              </label>
-            </section>
-
-            <LeadTable leads={p.leads} onlyNoSite={onlyNoSite} onGenerate={p.runOutreach} />
-          </>
-        )}
-
-        {p.leads.length === 0 && !p.searching && !p.searchError && (
-          <div className="rounded-2xl border border-dashed bg-card/40 p-10 text-center text-sm text-muted-foreground">
-            Faça uma busca para descobrir negócios locais que precisam da sua ajuda.
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              to="/login"
+              className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+            >
+              Começar grátis
+            </Link>
           </div>
-        )}
+        </div>
+
+        <div className="mt-20 grid gap-4 sm:grid-cols-3">
+          <Feature
+            icon={Target}
+            title="Busca real"
+            text="Google Search via Firecrawl. Nada de empresas fictícias."
+          />
+          <Feature
+            icon={Sparkles}
+            title="Score com IA"
+            text="Frio, morno, quente ou muito quente — baseado em presença digital real."
+          />
+          <Feature
+            icon={Zap}
+            title="Mensagem + landing"
+            text="WhatsApp pronto e prompt nichado para gerar a landing no Lovable."
+          />
+        </div>
       </main>
+    </div>
+  );
+}
 
-      <footer className="border-t py-6 text-center text-xs text-muted-foreground">
-        Dados gerados por IA para prospecção — confirme antes de contatar.
-      </footer>
-
-      <OutreachModal
-        open={!!p.activeLead}
-        lead={p.activeLead}
-        loading={p.outreachLoading}
-        data={p.outreachData}
-        error={p.outreachError}
-        onClose={p.closeOutreach}
-      />
+function Feature({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: typeof Target;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-2xl border bg-card p-5 shadow-card">
+      <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/15 text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <h3 className="mt-3 text-base font-semibold">{title}</h3>
+      <p className="mt-1 text-sm text-muted-foreground">{text}</p>
     </div>
   );
 }
