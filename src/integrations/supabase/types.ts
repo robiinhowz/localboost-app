@@ -14,7 +14,146 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      campaigns: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          max_leads: number
+          name: string
+          niche: string
+          notes: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id?: string
+          max_leads?: number
+          name: string
+          niche: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          max_leads?: number
+          name?: string
+          niche?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          address: string | null
+          ai_analysis: string | null
+          ai_problems: Json | null
+          campaign_id: string
+          created_at: string
+          has_website: boolean
+          id: string
+          instagram: string | null
+          landing_prompt: string | null
+          name: string
+          outreach_message: string | null
+          phone: string | null
+          raw_data: Json | null
+          score: Database["public"]["Enums"]["lead_score"]
+          source_url: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+          user_id: string
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          ai_analysis?: string | null
+          ai_problems?: Json | null
+          campaign_id: string
+          created_at?: string
+          has_website?: boolean
+          id?: string
+          instagram?: string | null
+          landing_prompt?: string | null
+          name: string
+          outreach_message?: string | null
+          phone?: string | null
+          raw_data?: Json | null
+          score?: Database["public"]["Enums"]["lead_score"]
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          ai_analysis?: string | null
+          ai_problems?: Json | null
+          campaign_id?: string
+          created_at?: string
+          has_website?: boolean
+          id?: string
+          instagram?: string | null
+          landing_prompt?: string | null
+          name?: string
+          outreach_message?: string | null
+          phone?: string | null
+          raw_data?: Json | null
+          score?: Database["public"]["Enums"]["lead_score"]
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +162,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      campaign_status: "draft" | "running" | "completed" | "paused"
+      lead_score: "cold" | "warm" | "hot" | "very_hot"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "replied"
+        | "meeting"
+        | "closed"
+        | "ignored"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +297,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      campaign_status: ["draft", "running", "completed", "paused"],
+      lead_score: ["cold", "warm", "hot", "very_hot"],
+      lead_status: [
+        "new",
+        "contacted",
+        "replied",
+        "meeting",
+        "closed",
+        "ignored",
+      ],
+    },
   },
 } as const
