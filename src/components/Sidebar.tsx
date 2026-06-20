@@ -86,6 +86,10 @@ export function MobileTopBar({ email }: { email: string | null }) {
           Campanhas
         </Link>
         <span>·</span>
+        <Link to="/leads" className="hover:text-foreground">
+          Leads
+        </Link>
+        <span>·</span>
         <button
           onClick={async () => {
             await supabase.auth.signOut();
