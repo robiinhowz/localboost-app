@@ -28,6 +28,9 @@ export function Sidebar({ email }: { email: string | null }) {
         <NavItem to="/campaigns" icon={Sparkles}>
           Campanhas
         </NavItem>
+        <NavItem to="/leads" icon={Users}>
+          Leads
+        </NavItem>
       </nav>
 
       <div className="border-t p-3">
