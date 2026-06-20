@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Loader2, Trash2, Flame, Users, Activity } from "lucide-react";
@@ -8,6 +8,7 @@ import {
   createCampaign,
   deleteCampaign,
 } from "@/lib/campaigns.functions";
+import { runCampaignSearch } from "@/lib/leads.functions";
 
 export const Route = createFileRoute("/_authenticated/campaigns")({
   head: () => ({ meta: [{ title: "Campanhas — LeadForge" }] }),
@@ -16,9 +17,11 @@ export const Route = createFileRoute("/_authenticated/campaigns")({
 
 function Campaigns() {
   const qc = useQueryClient();
+  const router = useRouter();
   const listFn = useServerFn(listCampaigns);
   const createFn = useServerFn(createCampaign);
   const delFn = useServerFn(deleteCampaign);
+  const searchFn = useServerFn(runCampaignSearch);
 
   const { data, isLoading } = useQuery({
     queryKey: ["campaigns"],
@@ -35,17 +38,34 @@ function Campaigns() {
   });
 
   const createMut = useMutation({
-    mutationFn: () => createFn({ data: form }),
-    onSuccess: () => {
+    mutationFn: async () => {
+      const res = await createFn({ data: form });
+      const campaignId = res.campaign.id;
+      // Auto-start prospecting immediately after creation
       setOpen(false);
       setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
       qc.invalidateQueries({ queryKey: ["campaigns"] });
+      router.navigate({ to: "/campaigns/$id", params: { id: campaignId } });
+      // Fire-and-await search; the detail page will reflect status="running"
+      try {
+        await searchFn({ data: { campaignId } });
+      } finally {
+        qc.invalidateQueries({ queryKey: ["campaigns"] });
+        qc.invalidateQueries({ queryKey: ["campaign", campaignId] });
+        qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+        qc.invalidateQueries({ queryKey: ["leads"] });
+      }
+      return res;
     },
   });
 
   const delMut = useMutation({
     mutationFn: (id: string) => delFn({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaigns"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
   });
 
   return (

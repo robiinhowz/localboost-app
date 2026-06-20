@@ -229,6 +229,19 @@ export const getLead = createServerFn({ method: "GET" })
     return { lead };
   });
 
+export const listLeads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data, error } = await supabase
+      .from("leads")
+      .select("*, campaigns(name, niche, city)")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    return { leads: data ?? [] };
+  });
+
 export const updateLeadStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(

@@ -29,11 +29,18 @@ function CampaignDetail() {
   const { data, isLoading } = useQuery({
     queryKey: ["campaign", id],
     queryFn: () => getFn({ data: { id } }),
+    refetchInterval: (q) =>
+      q.state.data?.campaign?.status === "running" ? 3000 : false,
   });
 
   const searchMut = useMutation({
     mutationFn: () => searchFn({ data: { campaignId: id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["campaign", id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign", id] });
+      qc.invalidateQueries({ queryKey: ["campaigns"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
   });
 
   if (isLoading || !data) {

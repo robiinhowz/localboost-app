@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { LayoutDashboard, Radar, LogOut, Sparkles } from "lucide-react";
+import { LayoutDashboard, Radar, LogOut, Sparkles, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function Sidebar({ email }: { email: string | null }) {
@@ -27,6 +27,9 @@ export function Sidebar({ email }: { email: string | null }) {
         </NavItem>
         <NavItem to="/campaigns" icon={Sparkles}>
           Campanhas
+        </NavItem>
+        <NavItem to="/leads" icon={Users}>
+          Leads
         </NavItem>
       </nav>
 
@@ -81,6 +84,10 @@ export function MobileTopBar({ email }: { email: string | null }) {
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Link to="/campaigns" className="hover:text-foreground">
           Campanhas
+        </Link>
+        <span>·</span>
+        <Link to="/leads" className="hover:text-foreground">
+          Leads
         </Link>
         <span>·</span>
         <button
