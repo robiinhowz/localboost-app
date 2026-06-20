@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { LayoutDashboard, Radar, LogOut, Sparkles } from "lucide-react";
+import { LayoutDashboard, Radar, LogOut, Sparkles, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function Sidebar({ email }: { email: string | null }) {
