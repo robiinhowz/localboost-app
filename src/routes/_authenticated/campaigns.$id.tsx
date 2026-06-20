@@ -29,6 +29,8 @@ function CampaignDetail() {
   const { data, isLoading } = useQuery({
     queryKey: ["campaign", id],
     queryFn: () => getFn({ data: { id } }),
+    refetchInterval: (q) =>
+      q.state.data?.campaign?.status === "running" ? 3000 : false,
   });
 
   const searchMut = useMutation({
