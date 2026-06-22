@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callAI, extractToolArgs } from "@/lib/ai.server";
-import { fcSearch, extractPhone, extractInstagramHandle } from "@/lib/firecrawl.server";
+import { fcSearch, extractPhone, extractInstagramHandle, verifyOwnWebsite, isOwnDomain } from "@/lib/firecrawl.server";
 
 type RawCandidate = {
   url: string;
