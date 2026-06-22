@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callAI, extractToolArgs } from "@/lib/ai.server";
-import { fcSearch, extractPhone, extractInstagramHandle } from "@/lib/firecrawl.server";
+import { fcSearch, extractPhone, extractInstagramHandle, verifyOwnWebsite, isOwnDomain } from "@/lib/firecrawl.server";
 
 type RawCandidate = {
   url: string;
@@ -182,24 +182,50 @@ export const runCampaignSearch = createServerFn({ method: "POST" })
       }>;
     }>(json);
 
-    const rows = parsed.leads
-      .filter((l) => l.name && l.name.trim().length > 1)
-      .map((l) => ({
-        campaign_id: campaign.id,
-        user_id: userId,
-        name: l.name.trim(),
-        phone: l.phone || null,
-        whatsapp: l.phone || null,
-        instagram: l.instagram || null,
-        address: l.address || null,
-        website: l.website || null,
-        source_url: l.source_url || null,
-        has_website: !!l.has_website,
-        score: l.score,
-        status: "new" as const,
-        ai_analysis: l.ai_analysis || null,
-        ai_problems: l.ai_problems ?? [],
-      }));
+    const filtered = parsed.leads.filter((l) => l.name && l.name.trim().length > 1);
+
+    // Verificação anti-falso-positivo: antes de marcar "sem site", checar
+    // (1) site retornado pela IA, (2) Google Search pelo nome, (3) bio do Instagram.
+    // Roda em paralelo com limite simples.
+    const verified = await Promise.all(
+      filtered.map(async (l) => {
+        let website = l.website && isOwnDomain(l.website) ? l.website : "";
+        if (!website) {
+          const found = await verifyOwnWebsite({
+            name: l.name,
+            city: campaign.city,
+            instagramHandle: l.instagram || null,
+          });
+          if (found) website = found;
+        }
+        const hasWebsite = !!website;
+        // Se a IA marcou hot/very_hot por "sem site" mas encontramos site, rebaixa.
+        let score = l.score;
+        if (hasWebsite && (score === "hot" || score === "very_hot")) score = "warm";
+        const problems = (l.ai_problems ?? []).filter(
+          (p) => !/sem\s*site|n[ãa]o\s*possui\s*site|sem\s*website/i.test(p),
+        );
+        if (!hasWebsite) problems.push("Sem site encontrado");
+        return { ...l, website, has_website: hasWebsite, score, ai_problems: problems };
+      }),
+    );
+
+    const rows = verified.map((l) => ({
+      campaign_id: campaign.id,
+      user_id: userId,
+      name: l.name.trim(),
+      phone: l.phone || null,
+      whatsapp: l.phone || null,
+      instagram: l.instagram || null,
+      address: l.address || null,
+      website: l.website || null,
+      source_url: l.source_url || null,
+      has_website: l.has_website,
+      score: l.score,
+      status: "new" as const,
+      ai_analysis: l.ai_analysis || null,
+      ai_problems: l.ai_problems ?? [],
+    }));
 
     if (rows.length > 0) {
       const { error: insErr } = await supabase.from("leads").insert(rows);
