@@ -10,7 +10,19 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Flame, Users, Radar, MessageSquare, CheckCircle2, TrendingUp } from "lucide-react";
+import {
+  Flame,
+  Users,
+  Radar,
+  MessageSquare,
+  CheckCircle2,
+  TrendingUp,
+  Globe,
+  AlertTriangle,
+  Clock,
+  Instagram,
+  Sparkles,
+} from "lucide-react";
 import { getDashboardStats } from "@/lib/campaigns.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
