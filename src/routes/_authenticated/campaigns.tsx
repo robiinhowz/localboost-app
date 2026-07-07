@@ -2,13 +2,14 @@ import { useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, Trash2, Flame, Users, Activity } from "lucide-react";
+import { Plus, Loader2, Trash2, Flame, Users, Activity, Sparkles, Search } from "lucide-react";
 import {
   listCampaigns,
   createCampaign,
   deleteCampaign,
 } from "@/lib/campaigns.functions";
 import { runCampaignSearch } from "@/lib/leads.functions";
+import { runAutoDiscovery } from "@/lib/discovery.functions";
 
 export const Route = createFileRoute("/_authenticated/campaigns")({
   head: () => ({ meta: [{ title: "Campanhas — LeadForge" }] }),
