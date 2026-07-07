@@ -2,13 +2,14 @@ import { useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, Trash2, Flame, Users, Activity } from "lucide-react";
+import { Plus, Loader2, Trash2, Flame, Users, Activity, Sparkles, Search } from "lucide-react";
 import {
   listCampaigns,
   createCampaign,
   deleteCampaign,
 } from "@/lib/campaigns.functions";
 import { runCampaignSearch } from "@/lib/leads.functions";
+import { runAutoDiscovery } from "@/lib/discovery.functions";
 
 export const Route = createFileRoute("/_authenticated/campaigns")({
   head: () => ({ meta: [{ title: "Campanhas — LeadForge" }] }),
@@ -22,6 +23,7 @@ function Campaigns() {
   const createFn = useServerFn(createCampaign);
   const delFn = useServerFn(deleteCampaign);
   const searchFn = useServerFn(runCampaignSearch);
+  const autoFn = useServerFn(runAutoDiscovery);
 
   const { data, isLoading } = useQuery({
     queryKey: ["campaigns"],
@@ -29,6 +31,7 @@ function Campaigns() {
   });
 
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
   const [form, setForm] = useState({
     name: "",
     niche: "",
@@ -37,23 +40,35 @@ function Campaigns() {
     max_leads: 20,
   });
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["campaigns"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    qc.invalidateQueries({ queryKey: ["leads"] });
+  };
+
   const createMut = useMutation({
     mutationFn: async () => {
+      if (mode === "auto") {
+        setOpen(false);
+        const res = await autoFn({
+          data: { name: form.name || undefined, max_leads: form.max_leads, iterations: 6 },
+        });
+        setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
+        invalidateAll();
+        router.navigate({ to: "/campaigns/$id", params: { id: res.campaignId } });
+        return res;
+      }
       const res = await createFn({ data: form });
       const campaignId = res.campaign.id;
-      // Auto-start prospecting immediately after creation
       setOpen(false);
       setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
-      qc.invalidateQueries({ queryKey: ["campaigns"] });
+      invalidateAll();
       router.navigate({ to: "/campaigns/$id", params: { id: campaignId } });
-      // Fire-and-await search; the detail page will reflect status="running"
       try {
         await searchFn({ data: { campaignId } });
       } finally {
-        qc.invalidateQueries({ queryKey: ["campaigns"] });
+        invalidateAll();
         qc.invalidateQueries({ queryKey: ["campaign", campaignId] });
-        qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
-        qc.invalidateQueries({ queryKey: ["leads"] });
       }
       return res;
     },
@@ -150,31 +165,56 @@ function Campaigns() {
           >
             <h2 className="text-lg font-bold">Nova campanha</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Defina o público-alvo. A busca usa o Google em tempo real.
+              Escolha o modo de prospecção.
             </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <ModeCard
+                active={mode === "manual"}
+                onClick={() => setMode("manual")}
+                icon={Search}
+                title="Busca Manual"
+                desc="Você define nicho e cidade."
+              />
+              <ModeCard
+                active={mode === "auto"}
+                onClick={() => setMode("auto")}
+                icon={Sparkles}
+                title="Descoberta Automática"
+                desc="A IA varre nichos e cidades pelo Brasil."
+              />
+            </div>
 
             <div className="mt-4 space-y-3">
               <Field
-                label="Nome"
+                label={mode === "auto" ? "Nome (opcional)" : "Nome"}
                 value={form.name}
                 onChange={(v) => setForm({ ...form, name: v })}
-                placeholder="Nutricionistas Vitória ES"
-                required
+                placeholder={
+                  mode === "auto"
+                    ? "Descoberta 07/07"
+                    : "Nutricionistas Vitória ES"
+                }
+                required={mode === "manual"}
               />
-              <Field
-                label="Nicho"
-                value={form.niche}
-                onChange={(v) => setForm({ ...form, niche: v })}
-                placeholder="Nutricionista"
-                required
-              />
-              <Field
-                label="Cidade"
-                value={form.city}
-                onChange={(v) => setForm({ ...form, city: v })}
-                placeholder="Vitória ES"
-                required
-              />
+              {mode === "manual" && (
+                <>
+                  <Field
+                    label="Nicho"
+                    value={form.niche}
+                    onChange={(v) => setForm({ ...form, niche: v })}
+                    placeholder="Nutricionista"
+                    required
+                  />
+                  <Field
+                    label="Cidade"
+                    value={form.city}
+                    onChange={(v) => setForm({ ...form, city: v })}
+                    placeholder="Vitória ES"
+                    required
+                  />
+                </>
+              )}
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
                   Máx. de leads
@@ -222,7 +262,7 @@ function Campaigns() {
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {createMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Criar campanha
+                {mode === "auto" ? "Iniciar descoberta" : "Criar campanha"}
               </button>
             </div>
           </form>
@@ -291,5 +331,35 @@ function StatusPill({ status }: { status: string }) {
     >
       {s.label}
     </span>
+  );
+}
+
+function ModeCard({
+  active,
+  onClick,
+  icon: Icon,
+  title,
+  desc,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof Users;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl border p-3 text-left transition ${
+        active
+          ? "border-primary/60 bg-primary/10"
+          : "border-border bg-background/40 hover:border-primary/30"
+      }`}
+    >
+      <Icon className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
+      <p className="mt-1.5 text-sm font-semibold">{title}</p>
+      <p className="text-[11px] text-muted-foreground">{desc}</p>
+    </button>
   );
 }
