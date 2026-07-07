@@ -99,12 +99,15 @@ function LeadsPage() {
             <tbody>
               {filtered.map((l) => {
                 const camp = (l as { campaigns?: { name?: string; niche?: string; city?: string } }).campaigns;
+                const raw = (l.raw_data ?? {}) as { discovered_niche?: string; discovered_city?: string };
+                const niche = raw.discovered_niche || camp?.niche || "—";
+                const city = raw.discovered_city || camp?.city || "—";
                 return (
                   <tr key={l.id} className="border-t hover:bg-secondary/20">
                     <td className="px-4 py-3">
                       <div className="font-medium">{l.name}</div>
                       <div className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">
-                        {l.ai_analysis ?? "—"}
+                        {niche} · {city}
                       </div>
                     </td>
                     <td className="hidden px-4 py-3 md:table-cell">
@@ -116,7 +119,7 @@ function LeadsPage() {
                       </div>
                     </td>
                     <td className="hidden px-4 py-3 lg:table-cell text-[11px] text-muted-foreground">
-                      {camp ? `${camp.name} · ${camp.city}` : "—"}
+                      {camp?.name ?? "—"}
                     </td>
                     <td className="px-4 py-3"><ScoreBadge score={l.score} /></td>
                     <td className="hidden px-4 py-3 sm:table-cell"><StatusBadge status={l.status} /></td>
