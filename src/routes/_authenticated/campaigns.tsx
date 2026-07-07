@@ -23,6 +23,7 @@ function Campaigns() {
   const createFn = useServerFn(createCampaign);
   const delFn = useServerFn(deleteCampaign);
   const searchFn = useServerFn(runCampaignSearch);
+  const autoFn = useServerFn(runAutoDiscovery);
 
   const { data, isLoading } = useQuery({
     queryKey: ["campaigns"],
@@ -30,6 +31,7 @@ function Campaigns() {
   });
 
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"manual" | "auto">("manual");
   const [form, setForm] = useState({
     name: "",
     niche: "",
@@ -38,23 +40,35 @@ function Campaigns() {
     max_leads: 20,
   });
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["campaigns"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    qc.invalidateQueries({ queryKey: ["leads"] });
+  };
+
   const createMut = useMutation({
     mutationFn: async () => {
+      if (mode === "auto") {
+        setOpen(false);
+        const res = await autoFn({
+          data: { name: form.name || undefined, max_leads: form.max_leads, iterations: 6 },
+        });
+        setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
+        invalidateAll();
+        router.navigate({ to: "/campaigns/$id", params: { id: res.campaignId } });
+        return res;
+      }
       const res = await createFn({ data: form });
       const campaignId = res.campaign.id;
-      // Auto-start prospecting immediately after creation
       setOpen(false);
       setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
-      qc.invalidateQueries({ queryKey: ["campaigns"] });
+      invalidateAll();
       router.navigate({ to: "/campaigns/$id", params: { id: campaignId } });
-      // Fire-and-await search; the detail page will reflect status="running"
       try {
         await searchFn({ data: { campaignId } });
       } finally {
-        qc.invalidateQueries({ queryKey: ["campaigns"] });
+        invalidateAll();
         qc.invalidateQueries({ queryKey: ["campaign", campaignId] });
-        qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
-        qc.invalidateQueries({ queryKey: ["leads"] });
       }
       return res;
     },
