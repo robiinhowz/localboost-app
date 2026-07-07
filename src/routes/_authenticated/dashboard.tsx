@@ -74,6 +74,28 @@ function Dashboard() {
             />
           </section>
 
+          <section className="mt-8">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">Oportunidades encontradas</h2>
+                <p className="text-xs text-muted-foreground">
+                  Sinais de negócios com potencial para contratar um novo site.
+                </p>
+              </div>
+              <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
+                +{data.todayCount} hoje
+              </span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <Stat icon={Users} label="Total" value={data.totalLeads} />
+              <Stat icon={Globe} label="Sem site" value={data.opportunities.noWebsite} accent="primary" />
+              <Stat icon={AlertTriangle} label="Site indisponível" value={data.opportunities.brokenSite} />
+              <Stat icon={Clock} label="Site antigo" value={data.opportunities.oldSite} />
+              <Stat icon={Instagram} label="Com Instagram" value={data.opportunities.withInstagram} />
+              <Stat icon={Sparkles} label="Muito quentes" value={data.opportunities.veryHot} accent="accent" />
+            </div>
+          </section>
+
           <section className="mt-8 grid gap-4 lg:grid-cols-2">
             <ChartCard title="Leads por nicho" data={data.byNiche} />
             <ChartCard title="Leads por cidade" data={data.byCity} />
