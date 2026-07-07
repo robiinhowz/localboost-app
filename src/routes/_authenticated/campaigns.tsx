@@ -333,3 +333,33 @@ function StatusPill({ status }: { status: string }) {
     </span>
   );
 }
+
+function ModeCard({
+  active,
+  onClick,
+  icon: Icon,
+  title,
+  desc,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof Users;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl border p-3 text-left transition ${
+        active
+          ? "border-primary/60 bg-primary/10"
+          : "border-border bg-background/40 hover:border-primary/30"
+      }`}
+    >
+      <Icon className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
+      <p className="mt-1.5 text-sm font-semibold">{title}</p>
+      <p className="text-[11px] text-muted-foreground">{desc}</p>
+    </button>
+  );
+}
