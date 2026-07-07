@@ -165,31 +165,56 @@ function Campaigns() {
           >
             <h2 className="text-lg font-bold">Nova campanha</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Defina o público-alvo. A busca usa o Google em tempo real.
+              Escolha o modo de prospecção.
             </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <ModeCard
+                active={mode === "manual"}
+                onClick={() => setMode("manual")}
+                icon={Search}
+                title="Busca Manual"
+                desc="Você define nicho e cidade."
+              />
+              <ModeCard
+                active={mode === "auto"}
+                onClick={() => setMode("auto")}
+                icon={Sparkles}
+                title="Descoberta Automática"
+                desc="A IA varre nichos e cidades pelo Brasil."
+              />
+            </div>
 
             <div className="mt-4 space-y-3">
               <Field
-                label="Nome"
+                label={mode === "auto" ? "Nome (opcional)" : "Nome"}
                 value={form.name}
                 onChange={(v) => setForm({ ...form, name: v })}
-                placeholder="Nutricionistas Vitória ES"
-                required
+                placeholder={
+                  mode === "auto"
+                    ? "Descoberta 07/07"
+                    : "Nutricionistas Vitória ES"
+                }
+                required={mode === "manual"}
               />
-              <Field
-                label="Nicho"
-                value={form.niche}
-                onChange={(v) => setForm({ ...form, niche: v })}
-                placeholder="Nutricionista"
-                required
-              />
-              <Field
-                label="Cidade"
-                value={form.city}
-                onChange={(v) => setForm({ ...form, city: v })}
-                placeholder="Vitória ES"
-                required
-              />
+              {mode === "manual" && (
+                <>
+                  <Field
+                    label="Nicho"
+                    value={form.niche}
+                    onChange={(v) => setForm({ ...form, niche: v })}
+                    placeholder="Nutricionista"
+                    required
+                  />
+                  <Field
+                    label="Cidade"
+                    value={form.city}
+                    onChange={(v) => setForm({ ...form, city: v })}
+                    placeholder="Vitória ES"
+                    required
+                  />
+                </>
+              )}
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
                   Máx. de leads
