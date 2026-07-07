@@ -108,10 +108,11 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const { data: campaigns } = await supabase.from("campaigns").select("id, status, niche, city");
     const { data: leads } = await supabase
       .from("leads")
-      .select("status, score, campaign_id");
+      .select("status, score, campaign_id, has_website, instagram, ai_problems, raw_data, created_at");
 
     const totalLeads = leads?.length ?? 0;
     const hotLeads = leads?.filter((l) => l.score === "hot" || l.score === "very_hot").length ?? 0;
+    const veryHot = leads?.filter((l) => l.score === "very_hot").length ?? 0;
     const activeCampaigns = campaigns?.filter((c) => c.status === "running").length ?? 0;
     const contacted = leads?.filter((l) =>
       ["contacted", "replied", "meeting", "closed"].includes(l.status),
@@ -122,23 +123,56 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const converted = leads?.filter((l) => l.status === "closed").length ?? 0;
     const replyRate = contacted > 0 ? Math.round((replied / contacted) * 100) : 0;
 
+    const probMatch = (l: { ai_problems?: unknown }, re: RegExp) => {
+      const arr = Array.isArray(l.ai_problems) ? (l.ai_problems as unknown[]) : [];
+      return arr.some((p) => typeof p === "string" && re.test(p));
+    };
+    const noWebsite = leads?.filter((l) => !l.has_website).length ?? 0;
+    const oldSite = leads?.filter((l) => probMatch(l, /antig|desatualiz|wix|canva|obsolet/i)).length ?? 0;
+    const brokenSite = leads?.filter((l) => probMatch(l, /indispon|fora do ar|erro|404|offline/i)).length ?? 0;
+    const abandonedIg = leads?.filter((l) => probMatch(l, /instagram.*abandon|bio fraca|sem posts|inativo/i)).length ?? 0;
+    const withInstagram = leads?.filter((l) => !!l.instagram).length ?? 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayCount = leads?.filter((l) => new Date(l.created_at) >= today).length ?? 0;
+
     const byNiche = new Map<string, number>();
     const byCity = new Map<string, number>();
-    for (const c of campaigns ?? []) {
-      const ln = leads?.filter((l) => l.campaign_id === c.id).length ?? 0;
-      byNiche.set(c.niche, (byNiche.get(c.niche) ?? 0) + ln);
-      byCity.set(c.city, (byCity.get(c.city) ?? 0) + ln);
+    for (const l of leads ?? []) {
+      const camp = campaigns?.find((c) => c.id === l.campaign_id);
+      const raw = (l.raw_data ?? {}) as { discovered_niche?: string; discovered_city?: string };
+      const niche = raw.discovered_niche || camp?.niche || "—";
+      const city = raw.discovered_city || camp?.city || "—";
+      byNiche.set(niche, (byNiche.get(niche) ?? 0) + 1);
+      byCity.set(city, (byCity.get(city) ?? 0) + 1);
     }
 
     return {
       totalLeads,
       hotLeads,
+      veryHot,
       activeCampaigns,
       totalCampaigns: campaigns?.length ?? 0,
       contacted,
       converted,
       replyRate,
-      byNiche: Array.from(byNiche.entries()).map(([name, value]) => ({ name, value })),
-      byCity: Array.from(byCity.entries()).map(([name, value]) => ({ name, value })),
+      todayCount,
+      opportunities: {
+        noWebsite,
+        brokenSite,
+        oldSite,
+        abandonedIg,
+        withInstagram,
+        veryHot,
+      },
+      byNiche: Array.from(byNiche.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([name, value]) => ({ name, value })),
+      byCity: Array.from(byCity.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([name, value]) => ({ name, value })),
     };
   });
