@@ -51,7 +51,7 @@ function Campaigns() {
       if (mode === "auto") {
         setOpen(false);
         const res = await autoFn({
-          data: { name: form.name || undefined, max_leads: form.max_leads, iterations: 6 },
+          data: { name: form.name || undefined, max_leads: form.max_leads },
         });
         setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
         invalidateAll();
