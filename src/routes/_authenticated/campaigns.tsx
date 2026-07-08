@@ -51,7 +51,7 @@ function Campaigns() {
       if (mode === "auto") {
         setOpen(false);
         const res = await autoFn({
-          data: { name: form.name || undefined, max_leads: form.max_leads, iterations: 6 },
+          data: { name: form.name || undefined, max_leads: form.max_leads },
         });
         setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
         invalidateAll();
@@ -217,18 +217,23 @@ function Campaigns() {
               )}
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Máx. de leads
+                  {mode === "auto" ? "Meta de oportunidades" : "Máx. de leads"}
                 </label>
                 <input
                   type="number"
                   min={5}
-                  max={50}
+                  max={mode === "auto" ? 200 : 50}
                   value={form.max_leads}
                   onChange={(e) =>
                     setForm({ ...form, max_leads: parseInt(e.target.value) || 20 })
                   }
                   className="w-full rounded-lg border bg-input/30 px-3 py-2 text-sm outline-none focus:border-primary/40"
                 />
+                {mode === "auto" && (
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    A IA pesquisa cidades por todo o Brasil até atingir essa meta.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
