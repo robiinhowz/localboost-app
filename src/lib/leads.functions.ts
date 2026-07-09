@@ -273,7 +273,16 @@ export const updateLeadStatus = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       id: z.string().uuid(),
-      status: z.enum(["new", "contacted", "replied", "meeting", "closed", "ignored"]),
+      status: z.enum([
+        "new",
+        "contacted",
+        "replied",
+        "meeting",
+        "interested",
+        "closed",
+        "not_interested",
+        "ignored",
+      ]),
     }),
   )
   .handler(async ({ context, data }) => {
