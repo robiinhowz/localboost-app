@@ -14,11 +14,19 @@ const SCORE_LABEL: Record<LeadScore, { label: string; cls: string }> = {
 };
 
 const STATUS_LABEL: Record<LeadStatus, { label: string; cls: string }> = {
-  new: { label: "Novo", cls: "bg-secondary text-secondary-foreground border-border" },
+  new: { label: "Não contatado", cls: "bg-secondary text-secondary-foreground border-border" },
   contacted: { label: "Contatado", cls: "bg-accent/15 text-accent border-accent/30" },
   replied: { label: "Respondeu", cls: "bg-primary/15 text-primary border-primary/30" },
   meeting: { label: "Reunião", cls: "bg-warning/15 text-warning border-warning/30" },
+  interested: {
+    label: "⭐ Interessado",
+    cls: "bg-gradient-to-r from-primary/25 to-warning/25 text-primary border-primary/40",
+  },
   closed: { label: "Fechado", cls: "bg-primary/25 text-primary border-primary/40" },
+  not_interested: {
+    label: "❌ Não interessado",
+    cls: "bg-destructive/15 text-destructive border-destructive/30",
+  },
   ignored: { label: "Ignorado", cls: "bg-muted text-muted-foreground border-border opacity-60" },
 };
 
@@ -45,10 +53,12 @@ export function StatusBadge({ status }: { status: LeadStatus }) {
 }
 
 export const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
-  { value: "new", label: "Novo" },
-  { value: "contacted", label: "Contatado" },
+  { value: "new", label: "☐ Não contatado" },
+  { value: "contacted", label: "☑ Contatado" },
   { value: "replied", label: "Respondeu" },
   { value: "meeting", label: "Reunião marcada" },
+  { value: "interested", label: "⭐ Interessado / aceitou proposta" },
   { value: "closed", label: "Cliente fechado" },
+  { value: "not_interested", label: "❌ Não interessado" },
   { value: "ignored", label: "Ignorado" },
 ];

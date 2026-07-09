@@ -12,7 +12,17 @@ export const Route = createFileRoute("/_authenticated/leads")({
 });
 
 const SCORES = ["all", "very_hot", "hot", "warm", "cold"] as const;
-const STATUSES = ["all", "new", "contacted", "replied", "meeting", "closed", "ignored"] as const;
+const STATUSES = [
+  "all",
+  "new",
+  "contacted",
+  "replied",
+  "meeting",
+  "interested",
+  "closed",
+  "not_interested",
+  "ignored",
+] as const;
 
 function LeadsPage() {
   const listFn = useServerFn(listLeads);
@@ -72,8 +82,9 @@ function LeadsPage() {
           all: "Todos os scores", very_hot: "Muito quente", hot: "Quente", warm: "Morno", cold: "Frio",
         }} />
         <Select value={status} onChange={(v) => setStatus(v as typeof status)} options={STATUSES} labelMap={{
-          all: "Todos os status", new: "Novo", contacted: "Contatado", replied: "Respondeu",
-          meeting: "Reunião", closed: "Fechado", ignored: "Ignorado",
+          all: "Todos os status", new: "☐ Não contatado", contacted: "☑ Contatado", replied: "Respondeu",
+          meeting: "Reunião", interested: "⭐ Interessado", closed: "Fechado",
+          not_interested: "❌ Não interessado", ignored: "Ignorado",
         }} />
       </div>
 
@@ -99,15 +110,24 @@ function LeadsPage() {
             <tbody>
               {filtered.map((l) => {
                 const camp = (l as { campaigns?: { name?: string; niche?: string; city?: string } }).campaigns;
-                const raw = (l.raw_data ?? {}) as { discovered_niche?: string; discovered_city?: string };
+                const raw = (l.raw_data ?? {}) as {
+                  discovered_niche?: string;
+                  discovered_city?: string;
+                  discovered_state?: string;
+                };
                 const niche = raw.discovered_niche || camp?.niche || "—";
-                const city = raw.discovered_city || camp?.city || "—";
+                const cityRaw = raw.discovered_city || camp?.city || "—";
+                // "Cidade UF" já vem no formato "Nome UF"; extrai UF separado quando existir
+                const ufMatch = cityRaw.match(/\b([A-Z]{2})\b\s*$/);
+                const uf = raw.discovered_state || ufMatch?.[1] || "";
+                const city = ufMatch ? cityRaw.replace(/\s+[A-Z]{2}\s*$/, "") : cityRaw;
+                const discoveredAt = new Date(l.created_at).toLocaleDateString("pt-BR");
                 return (
                   <tr key={l.id} className="border-t hover:bg-secondary/20">
                     <td className="px-4 py-3">
                       <div className="font-medium">{l.name}</div>
                       <div className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">
-                        {niche} · {city}
+                        {niche} · {city}{uf ? ` · ${uf}` : ""} · descoberto em {discoveredAt}
                       </div>
                     </td>
                     <td className="hidden px-4 py-3 md:table-cell">

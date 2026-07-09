@@ -9,7 +9,14 @@ import {
   verifyOwnWebsite,
   isOwnDomain,
 } from "@/lib/firecrawl.server";
-import { AUTO_NICHES, roundRobinCities, pickRandom } from "@/lib/discovery";
+import {
+  AUTO_NICHES,
+  getMunicipalitiesForState,
+  pickRandom,
+  DEFAULT_DISCOVERY_CRITERIA,
+  type UF,
+  type Municipality,
+} from "@/lib/discovery";
 
 type Cand = {
   url: string;
@@ -68,21 +75,40 @@ function looksBlocked(text: string) {
   return BLOCK_PATTERNS.some((r) => r.test(text));
 }
 
+const UF_CODES = [
+  "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA",
+  "PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO",
+] as const;
+
 export const runAutoDiscovery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
       name: z.string().trim().min(2).max(120).optional(),
       max_leads: z.number().int().min(5).max(200).default(30),
+      uf: z.enum(UF_CODES),
+      min_population: z.number().int().min(1000).max(1000000).optional(),
     }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
     const target = data.max_leads;
+    const uf = data.uf as UF;
+    const minPop = data.min_population ?? DEFAULT_DISCOVERY_CRITERIA.minPopulation;
     const campaignName =
       data.name?.trim() ||
-      `Descoberta Automática · ${new Date().toLocaleDateString("pt-BR")}`;
+      `Descoberta Automática · ${uf} · ${new Date().toLocaleDateString("pt-BR")}`;
+
+    const cities: Municipality[] = getMunicipalitiesForState(uf, {
+      minPopulation: minPop,
+    });
+
+    if (cities.length === 0) {
+      throw new Error(
+        `Nenhum município em ${uf} atende ao critério mínimo de ${minPop.toLocaleString("pt-BR")} habitantes. Reduza o valor.`,
+      );
+    }
 
     const { data: campaign, error: cErr } = await supabase
       .from("campaigns")
@@ -90,8 +116,8 @@ export const runAutoDiscovery = createServerFn({ method: "POST" })
         user_id: userId,
         name: campaignName,
         niche: "Descoberta Automática",
-        city: "Brasil (cobertura nacional)",
-        notes: `Meta: ${target} oportunidades. Cobertura nacional.`,
+        city: `${uf} (${cities.length} municípios · pop ≥ ${minPop.toLocaleString("pt-BR")})`,
+        notes: `Meta: ${target} oportunidades. Estado: ${uf}. População mínima: ${minPop.toLocaleString("pt-BR")}.`,
         max_leads: target,
         status: "running",
       })
@@ -99,15 +125,13 @@ export const runAutoDiscovery = createServerFn({ method: "POST" })
       .single();
     if (cErr) throw new Error(cErr.message);
 
-    const cities = roundRobinCities(); // ordem por região, embaralhado
-    const nicheRotation = pickRandom(AUTO_NICHES, AUTO_NICHES.length); // shuffle todos
+    const nicheRotation = pickRandom(AUTO_NICHES, AUTO_NICHES.length);
     const seenUrls = new Set<string>();
     const seenNames = new Set<string>();
     let totalInserted = 0;
     let cityIdx = 0;
     let nicheIdx = 0;
     const CONCURRENCY = 3;
-    // Hard cap para não gastar todos os créditos: no máximo 4× o alvo em cidades analisadas
     const MAX_CITY_BATCHES = Math.min(
       Math.ceil(cities.length / CONCURRENCY),
       Math.max(20, Math.ceil((target * 4) / CONCURRENCY)),
@@ -121,17 +145,18 @@ export const runAutoDiscovery = createServerFn({ method: "POST" })
       cityIdx += CONCURRENCY;
       if (cityBatch.length === 0) break;
 
-      // Dois nichos por cidade, rotacionando
-      const combos: Array<{ niche: string; city: string }> = [];
+      const combos: Array<{ niche: string; city: string; uf: UF }> = [];
       for (const c of cityBatch) {
         for (let k = 0; k < 2; k++) {
           combos.push({
             niche: nicheRotation[nicheIdx % nicheRotation.length],
-            city: c.name,
+            city: `${c.name} ${c.uf}`,
+            uf: c.uf,
           });
           nicheIdx++;
         }
       }
+
 
       const perQuery = 4;
       const searches = await Promise.all(
@@ -329,6 +354,7 @@ export const runAutoDiscovery = createServerFn({ method: "POST" })
         raw_data: {
           discovered_niche: l.niche,
           discovered_city: l.city,
+          discovered_state: uf,
           score_reasons: l.score_reasons,
           auto_discovery: true,
         },
