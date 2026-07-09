@@ -82,8 +82,9 @@ function LeadsPage() {
           all: "Todos os scores", very_hot: "Muito quente", hot: "Quente", warm: "Morno", cold: "Frio",
         }} />
         <Select value={status} onChange={(v) => setStatus(v as typeof status)} options={STATUSES} labelMap={{
-          all: "Todos os status", new: "Novo", contacted: "Contatado", replied: "Respondeu",
-          meeting: "Reunião", closed: "Fechado", ignored: "Ignorado",
+          all: "Todos os status", new: "☐ Não contatado", contacted: "☑ Contatado", replied: "Respondeu",
+          meeting: "Reunião", interested: "⭐ Interessado", closed: "Fechado",
+          not_interested: "❌ Não interessado", ignored: "Ignorado",
         }} />
       </div>
 
