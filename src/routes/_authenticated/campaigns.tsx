@@ -49,22 +49,41 @@ function Campaigns() {
     qc.invalidateQueries({ queryKey: ["leads"] });
   };
 
+  const resetForm = () =>
+    setForm({
+      name: "",
+      niche: "",
+      city: "",
+      notes: "",
+      max_leads: 20,
+      uf: "SP",
+      min_population: DEFAULT_DISCOVERY_CRITERIA.minPopulation,
+    });
+
   const createMut = useMutation({
     mutationFn: async () => {
       if (mode === "auto") {
         setOpen(false);
         const res = await autoFn({
-          data: { name: form.name || undefined, max_leads: form.max_leads },
+          data: {
+            name: form.name || undefined,
+            max_leads: form.max_leads,
+            uf: form.uf,
+            min_population: form.min_population,
+          },
         });
-        setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
+        resetForm();
         invalidateAll();
         router.navigate({ to: "/campaigns/$id", params: { id: res.campaignId } });
         return res;
       }
-      const res = await createFn({ data: form });
+      const { uf: _uf, min_population: _mp, ...manual } = form;
+      void _uf;
+      void _mp;
+      const res = await createFn({ data: manual });
       const campaignId = res.campaign.id;
       setOpen(false);
-      setForm({ name: "", niche: "", city: "", notes: "", max_leads: 20 });
+      resetForm();
       invalidateAll();
       router.navigate({ to: "/campaigns/$id", params: { id: campaignId } });
       try {
@@ -73,6 +92,7 @@ function Campaigns() {
         invalidateAll();
         qc.invalidateQueries({ queryKey: ["campaign", campaignId] });
       }
+
       return res;
     },
   });
