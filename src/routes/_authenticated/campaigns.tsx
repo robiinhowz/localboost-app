@@ -10,6 +10,7 @@ import {
 } from "@/lib/campaigns.functions";
 import { runCampaignSearch } from "@/lib/leads.functions";
 import { runAutoDiscovery } from "@/lib/discovery.functions";
+import { UF_LIST, DEFAULT_DISCOVERY_CRITERIA, type UF } from "@/lib/discovery";
 
 export const Route = createFileRoute("/_authenticated/campaigns")({
   head: () => ({ meta: [{ title: "Campanhas — LeadForge" }] }),
