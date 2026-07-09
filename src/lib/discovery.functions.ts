@@ -354,6 +354,7 @@ export const runAutoDiscovery = createServerFn({ method: "POST" })
         raw_data: {
           discovered_niche: l.niche,
           discovered_city: l.city,
+          discovered_state: uf,
           score_reasons: l.score_reasons,
           auto_discovery: true,
         },
