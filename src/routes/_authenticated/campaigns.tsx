@@ -39,6 +39,8 @@ function Campaigns() {
     city: "",
     notes: "",
     max_leads: 20,
+    uf: "SP" as UF,
+    min_population: DEFAULT_DISCOVERY_CRITERIA.minPopulation,
   });
 
   const invalidateAll = () => {
