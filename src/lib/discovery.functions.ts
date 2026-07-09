@@ -9,7 +9,14 @@ import {
   verifyOwnWebsite,
   isOwnDomain,
 } from "@/lib/firecrawl.server";
-import { AUTO_NICHES, roundRobinCities, pickRandom } from "@/lib/discovery";
+import {
+  AUTO_NICHES,
+  getMunicipalitiesForState,
+  pickRandom,
+  DEFAULT_DISCOVERY_CRITERIA,
+  type UF,
+  type Municipality,
+} from "@/lib/discovery";
 
 type Cand = {
   url: string;
