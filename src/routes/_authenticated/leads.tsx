@@ -12,7 +12,17 @@ export const Route = createFileRoute("/_authenticated/leads")({
 });
 
 const SCORES = ["all", "very_hot", "hot", "warm", "cold"] as const;
-const STATUSES = ["all", "new", "contacted", "replied", "meeting", "closed", "ignored"] as const;
+const STATUSES = [
+  "all",
+  "new",
+  "contacted",
+  "replied",
+  "meeting",
+  "interested",
+  "closed",
+  "not_interested",
+  "ignored",
+] as const;
 
 function LeadsPage() {
   const listFn = useServerFn(listLeads);
