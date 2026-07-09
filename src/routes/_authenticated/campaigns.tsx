@@ -238,6 +238,51 @@ function Campaigns() {
                   />
                 </>
               )}
+              {mode === "auto" && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Estado (UF)
+                    </label>
+                    <select
+                      value={form.uf}
+                      onChange={(e) => setForm({ ...form, uf: e.target.value as UF })}
+                      className="w-full rounded-lg border bg-input/30 px-3 py-2 text-sm outline-none focus:border-primary/40"
+                    >
+                      {UF_LIST.map((u) => (
+                        <option key={u.value} value={u.value}>
+                          {u.value} — {u.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Municípios do estado serão carregados e filtrados automaticamente.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      População mínima do município
+                    </label>
+                    <input
+                      type="number"
+                      min={1000}
+                      step={1000}
+                      value={form.min_population}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          min_population: parseInt(e.target.value) || 15000,
+                        })
+                      }
+                      className="w-full rounded-lg border bg-input/30 px-3 py-2 text-sm outline-none focus:border-primary/40"
+                    />
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Padrão: 15.000. Aumente para focar em cidades maiores, com mais
+                      comércio e concentração de empresas.
+                    </p>
+                  </div>
+                </>
+              )}
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
                   {mode === "auto" ? "Meta de oportunidades" : "Máx. de leads"}
