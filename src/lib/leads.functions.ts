@@ -275,10 +275,12 @@ export const updateLeadStatus = createServerFn({ method: "POST" })
       id: z.string().uuid(),
       status: z.enum([
         "new",
+        "not_contacted",
         "contacted",
         "replied",
         "meeting",
         "interested",
+        "proposal",
         "closed",
         "not_interested",
         "ignored",
@@ -286,11 +288,60 @@ export const updateLeadStatus = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const { data: prev } = await supabase
+      .from("leads")
+      .select("status")
+      .eq("id", data.id)
+      .maybeSingle();
     const { error } = await supabase
       .from("leads")
       .update({ status: data.status })
       .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    if (prev && prev.status !== data.status) {
+      await supabase.from("lead_contacts").insert({
+        lead_id: data.id,
+        user_id: userId,
+        kind: "status_change",
+        content: `Status alterado: ${prev.status} → ${data.status}`,
+        metadata: { from: prev.status, to: data.status },
+      });
+    }
+    return { ok: true };
+  });
+
+export const listLeadContacts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ leadId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
+      .from("lead_contacts")
+      .select("*")
+      .eq("lead_id", data.leadId)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { contacts: rows ?? [] };
+  });
+
+export const addLeadContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      leadId: z.string().uuid(),
+      kind: z.enum(["note", "call", "whatsapp", "email", "meeting"]).default("note"),
+      content: z.string().min(1).max(2000),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase.from("lead_contacts").insert({
+      lead_id: data.leadId,
+      user_id: userId,
+      kind: data.kind,
+      content: data.content,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
