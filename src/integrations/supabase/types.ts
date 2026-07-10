@@ -53,6 +53,44 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_contacts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          lead_id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          kind?: string
+          lead_id: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          lead_id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_contacts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           address: string | null
@@ -173,6 +211,8 @@ export type Database = {
         | "ignored"
         | "interested"
         | "not_interested"
+        | "not_contacted"
+        | "proposal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -311,6 +351,8 @@ export const Constants = {
         "ignored",
         "interested",
         "not_interested",
+        "not_contacted",
+        "proposal",
       ],
     },
   },
